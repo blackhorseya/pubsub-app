@@ -1,3 +1,5 @@
+APP_NAME=pubsub-app
+
 .PHONY: check-%
 check-%: ## check environment variable is exists
 	@if [ -z '${${*}}' ]; then echo 'Environment variable $* not set' && exit 1; fi
@@ -22,4 +24,12 @@ lint: ## execute golint
 
 .PHONY: report
 report: ## execute goreportcard
-	@curl -XPOST 'https://goreportcard.com/checks' --data 'repo=github.com/blackhorseya/pubsub-app'
+	@curl -XPOST 'https://goreportcard.com/checks' --data 'repo=github.com/blackhorseya/$(APP_NAME)'
+
+.PHONY: up-compose
+up-compose: ## run docker-compose up
+	@docker-compose -p $(APP_NAME) -f ./deployments/docker-compose.yml up -d
+
+.PHONY: down-compose
+down-compose: ## run docker-compose down
+	@docker-compose -p $(APP_NAME) -f ./deployments/docker-compose.yml down -v
