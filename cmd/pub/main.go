@@ -1,5 +1,3 @@
-//go:build dynamic
-
 package main
 
 import (

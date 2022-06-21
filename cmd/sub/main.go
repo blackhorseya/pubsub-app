@@ -1,38 +1,34 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/segmentio/kafka-go"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
-	"strings"
 )
 
 const (
 	kafkaURL = "localhost:9092"
-	topic    = "topic1"
 )
 
-func getKafkaReader(kafkaURL, topic string) *kafka.Reader {
-	brokers := strings.Split(kafkaURL, ",")
-	return kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  brokers,
-		Topic:    topic,
-		MinBytes: 10e3, // 10KB
-		MaxBytes: 10e6, // 10MB
-	})
-}
-
 func main() {
-	reader := getKafkaReader(kafkaURL, topic)
-	defer reader.Close()
+	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": kafkaURL,
+		"group.id":          "sub",
+		"auto.offset.reset": "earliest",
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer consumer.Close()
 
-	fmt.Println("start consuming ... !!")
+	topic := "topic1"
+	_ = consumer.Subscribe(topic, nil)
+
 	for {
-		m, err := reader.ReadMessage(context.Background())
+		msg, err := consumer.ReadMessage(-1)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("message at topic:%v partition:%v offset:%v	%s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+		fmt.Printf("message at topic:%v partition:%v offset:%v	%s = %s\n", *msg.TopicPartition.Topic, msg.TopicPartition.Partition, msg.TopicPartition.Offset, string(msg.Key), string(msg.Value))
 	}
 }
